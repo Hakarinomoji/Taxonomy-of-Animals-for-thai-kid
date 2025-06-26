@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปรแกรมทายชื่อสัตว์จากอนุกรมพิธาน</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .level-selection {
+            margin: 30px 0;
+        }
+
+        .level-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .level-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .level-btn.medium {
+            background: linear-gradient(45deg, #FF9800, #F57C00);
+        }
+
+        .level-btn.hard {
+            background: linear-gradient(45deg, #F44336, #D32F2F);
+        }
+
+        .quiz-container {
+            display: none;
+            text-align: left;
+        }
+
+        .question-header {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #667eea;
+        }
+
+        .question-text {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .clue-text {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 15px;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .taxonomy-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 1.1em;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .taxonomy-table th,
+        .taxonomy-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .taxonomy-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .taxonomy-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .hidden-cell {
+            background: linear-gradient(45deg, #ff6b6b, #feca57) !important;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            position: relative;
+        }
+
+        .hidden-cell::before {
+            content: "❓";
+            font-size: 1.5em;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 18px;
+            margin: 15px 0;
+            transition: border-color 0.3s ease;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .feedback {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .correct {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .incorrect {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .timer {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 15px 0;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .results h2 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        .score {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .play-again-btn {
+            background: white;
+            color: #f5576c;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 20px 10px;
+            transition: all 0.3s ease;
+        }
+
+        .play-again-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .animal-emoji {
+            font-size: 3em;
+            margin: 10px 0;
+            display: block;
+        }
+
+        .info-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            z-index: 100;
+        }
+
+        .info-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5);
+        }
+
+        .info-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .info-content {
+            background-color: white;
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalIn 0.3s ease-out;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.7); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .close-btn {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+            font-weight: bold;
+            transition: color 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        .animals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .animal-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .animal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .animal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .animal-header span {
+            font-size: 2em;
+            margin-right: 10px;
+        }
+
+        .animal-taxonomy {
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .animal-taxonomy div {
+            margin-bottom: 5px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .animal-taxonomy div:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .taxonomy-label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        @media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+    
+    .container {
+        padding: 15px;
+        margin: 5px;
+        max-width: 100%;
+        border-radius: 15px;
+    }
+    
+    h1 {
+        font-size: 1.6em;
+        margin-bottom: 15px;
+        line-height: 1.2;
+    }
+    
+    .level-btn {
+        width: 100%;
+        margin: 8px 0;
+        padding: 15px;
+        font-size: 16px;
+        border-radius: 20px;
+    }
+    
+    .level-btn small {
+        font-size: 12px;
+    }
+    
+    /* ปรับปรุงตาราง */
+    .taxonomy-table {
+        font-size: 14px;
+        margin: 10px 0;
+    }
+    
+    .taxonomy-table th,
+    .taxonomy-table td {
+        padding: 10px 8px;
+        font-size: 13px;
+    }
+    
+    /* ปรับปรุง input */
+    .answer-input {
+        font-size: 16px; /* ป้องกัน zoom ใน iOS */
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .submit-btn, .next-btn {
+        padding: 15px;
+        font-size: 16px;
+        border-radius: 20px;
+    }
+    
+    /* ปรับปรุงปุ่มข้อมูล */
+    .info-btn {
+        top: 10px;
+        right: 10px;
+        padding: 10px 15px;
+        font-size: 14px;
+        border-radius: 20px;
+    }
+    
+    /* ปรับปรุง Modal */
+    .info-content {
+        margin: 2% auto;
+        padding: 15px;
+        width: 95%;
+        max-height: 90vh;
+        border-radius: 10px;
+    }
+    
+    .animals-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .animal-card {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    .animal-header {
+        font-size: 1.1em;
+    }
+    
+    .animal-header span {
+        font-size: 1.5em;
+    }
+    
+    .taxonomy-label {
+        width: 80px;
+        font-size: 12px;
+    }
+}
+
+/* มือถือขนาดกลาง (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    .container {
+        padding: 25px;
+        margin: 15px;
+        max-width: 95%;
+    }
+    
+    h1 {
+        font-size: 2em;
+    }
+    
+    .level-btn {
+        width: 100%;
+        margin: 10px 0;
+        padding: 15px 25px;
+    }
+    
+    .animals-grid {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+    }
+}
+
+/* แท็บเล็ต (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 700px;
+        padding: 35px;
+    }
+    
+    .level-btn {
+        display: inline-block;
+        width: auto;
+        min-width: 200px;
+        margin: 10px 15px;
+    }
+    
+    .animals-grid {
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 20px;
+    }
+}
+
+/* =================================== */
+/* การปรับปรุงสำหรับแนวนอน */
+/* =================================== */
+
+/* มือถือแนวนอน */
+@media (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding: 10px;
+        margin: 5px auto;
+        max-height: 95vh;
+        overflow-y: auto;
+    }
+    
+    h1 {
+        font-size: 1.4em;
+        margin-bottom: 10px;
+    }
+    
+    .level-btn {
+        display: inline-block;
+        width: auto;
+        margin: 5px 10px;
+        padding: 8px 20px;
+        font-size: 14px;
+    }
+    
+    .question-header {
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .question-text {
+        font-size: 1.2em;
+        margin-bottom: 10px;
+    }
+    
+    .clue-text {
+        font-size: 1em;
+        margin-bottom: 10px;
+    }
+    
+    .info-content {
+        max-height: 85vh;
+        padding: 15px;
+    }
+}
+
+/* =================================== */
+/* การปรับปรุงสำหรับหน้าจอใหญ่ */
+/* =================================== */
+
+/* Desktop ขนาดใหญ่ */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 900px;
+    }
+    
+    .animals-grid {
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 25px;
+    }
+    
+    .animal-card {
+        padding: 25px;
+    }
+}
+
+/* =================================== */
+/* การปรับปรุงสำหรับ Touch */
+/* =================================== */
+
+/* ปรับปรุงการ Touch บนมือถือ */
+.level-btn,
+.submit-btn,
+.next-btn,
+.play-again-btn,
+.info-btn,
+.close-btn {
+    touch-action: manipulation; /* ป้องกัน double-tap zoom */
+    -webkit-tap-highlight-color: transparent; /* ลบสีไฮไลท์ */
+    user-select: none; /* ป้องกันการเลือกข้อความ */
+}
+
+/* ปรับปรุงการแสดงผล Focus สำหรับ keyboard navigation */
+.answer-input:focus,
+.level-btn:focus,
+.submit-btn:focus,
+.next-btn:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* =================================== */
+/* การปรับปรุงเฉพาะ iOS */
+/* =================================== */
+
+/* แก้ปัญหาสำหรับ iPhone และ iPad */
+@supports (-webkit-touch-callout: none) {
+    .container {
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    
+    .info-btn {
+        right: max(20px, env(safe-area-inset-right));
+        top: max(20px, env(safe-area-inset-top));
+    }
+    
+    /* แก้ปัญหา input zoom ใน iOS */
+    .answer-input {
+        font-size: 16px;
+        transform: none;
+    }
+}
+
+/* =================================== */
+/* ปรับปรุงสำหรับ Print */
+/* =================================== */
+
+@media print {
+    .info-btn,
+    .timer,
+    .progress,
+    .submit-btn,
+    .next-btn,
+    .play-again-btn {
+        display: none;
+    }
+    
+    .container {
+        box-shadow: none;
+        background: white;
+    }
+    
+    body {
+        background: white;
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- ปุ่มข้อมูลสัตว์ทั้งหมด -->
+    <button class="info-btn" onclick="showAnimalInfo()">
+        📚 ข้อมูลสำหรับพวกไม่รู้เช่นคนทำ
+    </button>
+
+    <div class="container">
+        <!-- หน้าเลือกระดับความยาก -->
+        <div id="levelSelection" class="level-selection">
+            <h1>🐾 ทายชื่อสัตว์จากอนุกรมพิธาน</h1>
+            <p style="font-size: 1.2em; color: #666; margin-bottom: 30px;">ดูข้อมูลอนุกรมพิธานแล้วทายว่าเป็นสัตว์อะไร</p>
+            
+            <button class="level-btn" onclick="startQuiz('easy')">
+                😊 ง่าย<br><small>น้องป.3บอกง่าย</small>
+            </button>
+            
+            <button class="level-btn medium" onclick="startQuiz('medium')">
+                😐 ปานกลาง<br><small>เริ่มตึงละ</small>
+            </button>
+            
+            <button class="level-btn hard" onclick="startQuiz('hard')">
+                😤 ยาก<br><small>พ่อผมบอกยาก</small>
+            </button>
+        </div>
+
+        <!-- หน้าทำข้อสอบ -->
+        <div id="quizContainer" class="quiz-container">
+            <div class="timer" id="timer">⏱️ เวลา: 00:00</div>
+            
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="question-header">
+                <div class="question-text">🔍 จากข้อมูลอนุกรมพิธานด้านล่าง นี่คือสัตว์อะไร?</div>
+                <div class="clue-text">ใช้ข้อมูลที่แสดงเป็นตัวใบ้ในการทาย</div>
+                
+                <table class="taxonomy-table" id="taxonomyTable">
+                    <thead>
+                        <tr>
+                            <th>ระดับอนุกรมพิธาน</th>
+                            <th>ข้อมูล</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taxonomyBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <input type="text" class="answer-input" id="answerInput" placeholder="🐾 พิมพ์ชื่อสัตว์ที่คุณคิดว่าใช่...">
+            
+            <button class="submit-btn" onclick="submitAnswer()">🎯 ส่งคำตอบ</button>
+            
+            <div id="feedback" class="feedback" style="display: none;"></div>
+            
+            <button id="nextBtn" class="next-btn" style="display: none;" onclick="nextQuestion()">คำถามถัดไป 🡪</button>
+        </div>
+
+        <!-- หน้าผลลัพธ์ -->
+        <div id="results" class="results">
+            <h2>🎉 เสร็จสิ้น!</h2>
+            <div class="score" id="finalScore"></div>
+            <div id="finalTime" style="font-size: 1.5em; margin: 15px 0;"></div>
+            <div id="performance" style="font-size: 1.2em; margin: 20px 0;"></div>
+            
+            <button class="play-again-btn" onclick="playAgain()">🔄 เล่นใหม่</button>
+            <button class="play-again-btn" onclick="location.reload()" style="background: #6c757d;">🚪 ออกจากเกม</button>
+        </div>
+    </div>
+
+    <!-- Modal ข้อมูลสัตว์ทั้งหมด -->
+    <div id="animalInfoModal" class="info-modal">
+        <div class="info-content">
+            <span class="close-btn" onclick="closeAnimalInfo()">&times;</span>
+            <h3 style="color: #667eea; margin-bottom: 20px; text-align: center; font-size: 1.8em;">
+                🐾 ข้อมูลอนุกรมพิธานสัตว์ทั้งหมด
+            </h3>
+            <div id="animalsGrid" class="animals-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // ข้อมูลสัตว์ต่างๆ
+        const animals = [
+            {
+                name: "มนุษย์",
+                emoji: "👨",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)", 
+                    class: "Mammalia (เลี้ยงลูกด้วยนม)",
+                    order: "Primates (ไพรเมท)",
+                    family: "Hominidae (วานรใหญ่)",
+                    genus: "Homo (โฮโม)",
+                    species: "Homo sapiens",
+                    characteristic: "สัตว์เลือดอุ่น มีสมองใหญ่ เดินสองขา"
+                }
+            },
+            {
+                name: "สุนัข",
+                emoji: "🐕",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Mammalia (เลี้ยงลูกด้วยนม)", 
+                    order: "Carnivora (กินเนื้อ)",
+                    family: "Canidae (วงศ์สุนัข)",
+                    genus: "Canis (คานิส)",
+                    species: "Canis lupus",
+                    characteristic: "สัตว์เลี้ยง ซื่อสัตย์ มีเขี้ยวคม"
+                }
+            },
+            {
+                name: "แมว",
+                emoji: "🐱",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Mammalia (เลี้ยงลูกด้วยนม)",
+                    order: "Carnivora (กินเนื้อ)", 
+                    family: "Felidae (วงศ์แมว)",
+                    genus: "Felis (เฟลิส)",
+                    species: "Felis catus",
+                    characteristic: "สัตว์เลี้ยง มีกรงเล็บ ชอบนอนตากแดด"
+                }
+            },
+            {
+                name: "กบ",
+                emoji: "🐸",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Amphibia (สะเทินน้ำสะเทินบก)",
+                    order: "Anura (ไม่มีหาง)", 
+                    family: "Ranidae (วงศ์กบ)",
+                    genus: "Rana (รานา)",
+                    species: "Rana temporaria",
+                    characteristic: "ผิวหนังเปียกชื้น กินแมลง กระโดดเก่ง"
+                }
+            },
+            {
+                name: "ผึ้ง",
+                emoji: "🐝",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Arthropoda (สัตว์ขาปล้อง)",
+                    class: "Insecta (แมลง)",
+                    order: "Hymenoptera (ผึ้งและมด)",
+                    family: "Apidae (วงศ์ผึ้ง)",
+                    genus: "Apis (เอปิส)",
+                    species: "Apis mellifera", 
+                    characteristic: "มีปีก บินได้ ทำน้ำผึ้ง อาศัยเป็นฝูง"
+                }
+            },
+            {
+                name: "ปลาทอง",
+                emoji: "🐠",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Actinopterygii (ปลาครีบแฉก)",
+                    order: "Cypriniformes (ปลาคาร์พ)",
+                    family: "Cyprinidae (วงศ์ปลาคาร์พ)",
+                    genus: "Carassius (คาราสเซียส)",
+                    species: "Carassius auratus",
+                    characteristic: "ปลาน้ำจืด มีเกล็ด หายใจใต้น้ำ"
+                }
+            },
+            {
+                name: "ช้าง",
+                emoji: "🐘",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Mammalia (เลี้ยงลูกด้วยนม)",
+                    order: "Proboscidea (มีงวง)",
+                    family: "Elephantidae (วงศ์ช้าง)",
+                    genus: "Elephas (เอเลฟาส)",
+                    species: "Elephas maximus",
+                    characteristic: "สัตว์ใหญ่ที่สุดบนบก มีงวงยาว มีงา"
+                }
+            },
+            {
+                name: "กิ้งก่า",
+                emoji: "🦎",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Reptilia (สัตว์เลื้อยคลาน)",
+                    order: "Squamata (มีเกล็ด)",
+                    family: "Gekkonidae (วงศ์กิ้งก่า)",
+                    genus: "Gecko (เก็กโก)",
+                    species: "Gecko gecko",
+                    characteristic: "เลื้อยได้บนผนัง เปลี่ยนสีได้ กินแมลง"
+                }
+            },
+            {
+                name: "ปู",
+                emoji: "🦀",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Arthropoda (สัตว์ขาปล้อง)",
+                    class: "Malacostraca (มาลาโคสตราคา)",
+                    order: "Decapoda (สิบขา)",
+                    family: "Portunidae (วงศ์ปูว่ายน้ำ)",
+                    genus: "Portunus (พอร์ทูนัส)",
+                    species: "Portunus pelagicus",
+                    characteristic: "มีก้ามใหญ่ เดินข้างๆ อาศัยในทะเล"
+                }
+            },
+            {
+                name: "นก",
+                emoji: "🐦",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Aves (นก)",
+                    order: "Passeriformes (นกกินเมล็ด)",
+                    family: "Turdidae (วงศ์นกเดินดง)",
+                    genus: "Turdus (เทอร์ดัส)",
+                    species: "Turdus migratorius",
+                    characteristic: "มีปีก มีขน บินได้ วางไข่"
+                }
+            },
+            {
+                name: "งู",
+                emoji: "🐍",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Reptilia (สัตว์เลื้อยคลาน)",
+                    order: "Squamata (มีเกล็ด)",
+                    family: "Pythonidae (วงศ์งูหลาม)",
+                    genus: "Python (ไพธอน)",
+                    species: "Python reticulatus",
+                    characteristic: "ไม่มีขา เลื้อยไปมา กลืนเหยื่อทั้งตัว"
+                }
+            },
+    {
+        name: "ยุงลายบ้าน",
+        emoji: "🦟",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Arthropoda (สัตว์ขาปล้อง)",
+            class: "Insecta (แมลง)",
+            order: "Diptera (แมลงปีกคู่)",
+            family: "Culicidae (วงศ์ยุง)",
+            genus: "Aedes (เอดีส)",
+            species: "Aedes aegypti",
+            characteristic: "พาหะนำโรคไข้เลือดออก มีลายขาวดำ"
+        }
+    },
+    {
+        name: "แพนด้ายักษ์",
+        emoji: "🐼",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Ursidae (วงศ์หมี)",
+            genus: "Ailuropoda (ไอลูโรโปดา)",
+            species: "Ailuropoda melanoleuca",
+            characteristic: "กินไผ่เป็นอาหาร ขนสีขาวดำ สัญลักษณ์การอนุรักษ์"
+        }
+    },
+    {
+        name: "แอลลิเกเตอร์อเมริกา",
+        emoji: "🐊",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Crocodilia (จระเข้)",
+            family: "Alligatoridae (วงศ์แอลลิเกเตอร์)",
+            genus: "Alligator (แอลลิเกเตอร์)",
+            species: "Alligator mississippiensis",
+            characteristic: "นักล่าในน้ำ ปากกว้าง ฟันแหลม อาศัยในพื้นที่ชายฝั่งทางใต้ของสหรัฐฯ"
+        }
+    },
+    {
+        name: "เป็ดมอลลาร์ด",
+        emoji: "🦆",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Anseriformes (นกเป็ดห่านโลมา)",
+            family: "Anatidae (วงศ์เป็ด)",
+            genus: "Anas (อานาส)",
+            species: "Anas platyrhynchos",
+            characteristic: "เป็ดน้ำจืด ตัวผู้มีหัวสีเขียว มีความสามารถในการบิน"
+        }
+    },
+    {
+        name: "กิ้งก่ากรีนอาโนล์",
+        emoji: "🦎",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Squamata (สัตว์มีเกล็ด)",
+            family: "Dactyloidae (วงศ์อาโนล์)",
+            genus: "Anolis (อาโนลิส)",
+            species: "Anolis carolinensis",
+            characteristic: "เปลี่ยนสีได้ มีถุงคอสีแดง ปีนป่ายเก่ง"
+        }
+    },
+    {
+        name: "แอนติโลคาปาร์",
+        emoji: "🦌",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Antilocapridae (วงศ์แอนติโลคาปาร์)",
+            genus: "Antilocapra (แอนติโลคาปรา)",
+            species: "Antilocarpa americana",
+            characteristic: "วิ่งเร็วที่สุดในอเมริกาเหนือ มีเขาแฉก"
+        }
+    },
+    {
+        name: "ผึ้งโพรงฝรั่ง",
+        emoji: "🐝",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Arthropoda (สัตว์ขาปล้อง)",
+            class: "Insecta (แมลง)",
+            order: "Hymenoptera (แมลงปีกแข็ง)",
+            family: "Apidae (วงศ์ผึ้ง)",
+            genus: "Apis (อาปิส)",
+            species: "Apis mellifera",
+            characteristic: "ผลิตน้ำผึ้ง ผสมเกสรดอกไม้ มีชีวิตเป็นสังคม"
+        }
+    },
+    {
+        name: "นกเคียวิ",
+        emoji: "🥝",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Apterygiformes (นกไม่มีปีก)",
+            family: "Apterygidae (วงศ์เคียวิ)",
+            genus: "Apteryx (อาเทอริกซ์)",
+            species: "Apteryx australis",
+            characteristic: "บินไม่ได้ จะงอยยาว ออกหากินเวลากลางคืน"
+        }
+    },
+    {
+        name: "เตตร้าเม็กซิกัน",
+        emoji: "🐠",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Actinopterygii (ปลาครีบแข็ง)",
+            order: "Characiformes (ปลาคาราซิน)",
+            family: "Characidae (วงศ์เตตร้า)",
+            genus: "Astyanax (แอสไตยานาซ)",
+            species: "Astyanax mexicanus",
+            characteristic: "ปลาสวยงาม เลี้ยงในตู้ปลา มีสีสันสดใส"
+        }
+    },
+    {
+        name: "นกเค้ากู่",
+        emoji: "🦉",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Strigiformes (นกฮูก)",
+            family: "Strigidae (วงศ์นกเค้าแก้ว)",
+            genus: "Otus (โอตุส)",
+            species: "Otus lettia",
+            characteristic: "นกล่าเหยื่อตอนกลางคืน มีหูยื่น เห็นในความมืดได้ดี"
+        }
+    },
+    {
+        name: "วาฬสีน้ำเงิน",
+        emoji: "🐋",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Cetacea (วาฬโลมา)",
+            family: "Balaenopteridae (วงศ์วาฬฟันแผ่น)",
+            genus: "Balaenoptera (บาลีโนเทอรา)",
+            species: "Balaenoptera musculus",
+            characteristic: "สัตว์ที่ใหญ่ที่สุดในโลก กินแพลงตอน มีเสียงร้องดัง"
+        }
+    },
+    {
+        name: "ควายไบซันอเมริกัน",
+        emoji: "🦌",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Bovidae (วงศ์วัว)",
+            genus: "Bison (ไบซัน)",
+            species: "Bison bison",
+            characteristic: "สัตว์สัญลักษณ์อเมริกาเหนือ ตัวใหญ่ มีขนยาวหน้าอก"
+        }
+    },
+    {
+        name: "ห่านแคนาดา",
+        emoji: "🪿",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Anseriformes (นกเป็ดห่านโลมา)",
+            family: "Anatidae (วงศ์เป็ด)",
+            genus: "Branta (บรันตา)",
+            species: "Branta canadensis",
+            characteristic: "นกประจำถิ่นแคนาดา อพยพระยะไกล บินเป็นฝูงรูปตัววี"
+        }
+    },
+    {
+        name: "หมาป่า",
+        emoji: "🐺",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Canidae (วงศ์สุนัข)",
+            genus: "Canis (คานิส)",
+            species: "Canis lupus",
+            characteristic: "นักล่าฝูง ชาญฉลาด มีการสื่อสารที่ซับซ้อน"
+        }
+    },
+    {
+        name: "สุนัข",
+        emoji: "🐕",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)", 
+            order: "Carnivora (กินเนื้อ)",
+            family: "Canidae (วงศ์สุนัข)",
+            genus: "Canis (คานิส)",
+            species: "Canis lupus familiaris",
+            characteristic: "สัตว์เลี้ยง ซื่อสัตย์ มีเขี้ยวคม"
+        }
+    },
+    {
+        name: "ปลาทอง",
+        emoji: "🐠",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Actinopterygii (ปลาครีบแข็ง)",
+            order: "Cypriniformes (ปลาไน)",
+            family: "Cyprinidae (วงศ์ปลาไน)",
+            genus: "Carassius (คาราสเซียส)",
+            species: "Carassius auratus",
+            characteristic: "ปลาเลี้ยงยอดนิยม สีทองสวยงาม ดูแลง่าย"
+        }
+    },
+    {
+        name: "ฉลามกระเบนหัวบาตร",
+        emoji: "🦈",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Chondrichthyes (ปลากระดูกอ่อน)",
+            order: "Carcharhiniformes (ฉลามกราวด์)",
+            family: "Carcharhinidae (วงศ์ฉลามเรคคุเซียม)",
+            genus: "Carcharhinus (คาร์คาไรนัส)",
+            species: "Carcharhinus leucas",
+            characteristic: "ฉลามที่อันตราย สามารถอาศัยในน้ำจืดได้"
+        }
+    },
+    {
+        name: "ฉลามขาว",
+        emoji: "🦈",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Chondrichthyes (ปลากระดูกอ่อน)",
+            order: "Lamniformes (ฉลามแลมนา)",
+            family: "Lamnidae (วงศ์ฉลามแลมนา)",
+            genus: "Carcharodon (คาร์คาโรดอน)",
+            species: "Carcharodon carcharias",
+            characteristic: "นักล่าสูงสุดในมหาสมุทร ฟันคมกริบ ขนาดใหญ่มาก"
+        }
+    },
+    {
+        name: "แรดขาวแอฟริกา",
+        emoji: "🦏",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Perissodactyla (สัตว์กีบเดี่ยว)",
+            family: "Rhinocerotidae (วงศ์แรด)",
+            genus: "Ceratotherium (เซราโตเทเรียม)",
+            species: "Ceratotherium simum",
+            characteristic: "แรดที่ใหญ่ที่สุด มีเขาสองเขา ปากกว้าง"
+        }
+    },
+    {
+        name: "กวาง",
+        emoji: "🦌",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Cervidae (วงศ์กวาง)",
+            genus: "Cervus (เซอร์วัส)",
+            species: "Cervus elaphus",
+            characteristic: "มีเขากิ่ง วิ่งเร็ว กระโดดสูงได้"
+        }
+    },
+    {
+        name: "กวางแดง",
+        emoji: "🦌",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Cervidae (วงศ์กวาง)",
+            genus: "Cervus (เซอร์วัส)",
+            species: "Cervus elaphus",
+            characteristic: "กวางขนาดใหญ่ ขนสีแดงน้ำตาล เขาใหญ่แฉก"
+        }
+    },
+    {
+        name: "พยาธิตัวตืด",
+        emoji: "🪱",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Platyhelminthes (หนอนแบน)",
+            class: "Cestoda (พยาธิตัวตืด)",
+            order: "Cyclophyllidea (ไซโคลฟิลลิเดีย)",
+            family: "Taeniidae (วงศ์เทเนีย)",
+            genus: "Taenia (ทีเนีย)",
+            species: "Taenia solium",
+            characteristic: "ปรสิตในลำไส้ ทำให้เกิดโรค มีหัวยึดเกาะ"
+        }
+    },
+    {
+        name: "กิ้งก่าตัวเลื้อย",
+        emoji: "🦎",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Squamata (สัตว์มีเกล็ด)",
+            family: "Chamaeleonidae (วงศ์กิ้งก่าเลื้อน)",
+            genus: "Chamaeleo (คามีลีโอ)",
+            species: "Chamaeleo chamaeleon",
+            characteristic: "เปลี่ยนสีได้ ลิ้นยาว ตาหมุนได้อิสระ"
+        }
+    },
+    {
+        name: "เต่าตนุ",
+        emoji: "🐢",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Testudines (เต่า)",
+            family: "Cheloniidae (วงศ์เต่าทะเล)",
+            genus: "Chelonia (เคโลเนีย)",
+            species: "Chelonia mydas",
+            characteristic: "เต่าทะเลใหญ่ กินสาหร่าย ว่ายน้ำไกล"
+        }
+    },
+    {
+        name: "ชิมแปนซี",
+        emoji: "🐵",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Primates (ไพรเมต)",
+            family: "Hominidae (วงศ์คน)",
+            genus: "Pan (แพน)",
+            species: "Pan troglodytes",
+            characteristic: "ฉลาดมาก ใช้เครื่องมือได้ DNA ใกล้เคียงมนุษย์"
+        }
+    },
+    {
+        name: "เต่าคอลายเหลือง",
+        emoji: "🐢",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Testudines (เต่า)",
+            family: "Emydidae (วงศ์เต่าน้ำจืด)",
+            genus: "Chrysemys (ไครเซมิส)",
+            species: "Chrysemys picta",
+            characteristic: "เต่าน้ำจืด มีลายสีสวย อาบแดดบนไม้ท่อน"
+        }
+    },
+    {
+        name: "นกกระสา",
+        emoji: "🕊️",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Ciconiiformes (นกกระสา)",
+            family: "Ciconiidae (วงศ์นกกระสา)",
+            genus: "Ciconia (ซิโคเนีย)",
+            species: "Ciconia ciconia",
+            characteristic: "นกขนาดใหญ่ จะงอยยาว อพยพตามฤดูกาล"
+        }
+    },
+    {
+        name: "อีกา",
+        emoji: "🐦‍⬛",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Passeriformes (นกกระจอก)",
+            family: "Corvidae (วงศ์อีกา)",
+            genus: "Corvus (คอร์วัส)",
+            species: "Corvus corax",
+            characteristic: "ฉลาดมาก ขนดำ เสียงแหลม แก้ปัญหาได้"
+        }
+    },
+    {
+        name: "อีกาโคนปากขาว",
+        emoji: "🐦‍⬛",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Passeriformes (นกกระจอก)",
+            family: "Corvidae (วงศ์อีกา)",
+            genus: "Corvus (คอร์วัส)",
+            species: "Corvus frugilegus",
+            characteristic: "อีกาขนาดกลาง ปากสีขาว บินเป็นฝูงใหญ่"
+        }
+    },
+    {
+        name: "จระเข้น้ำเค็ม",
+        emoji: "🐊",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Crocodilia (จระเข้)",
+            family: "Crocodylidae (วงศ์จระเข้)",
+            genus: "Crocodylus (โครโคไดลัส)",
+            species: "Crocodylus porosus",
+            characteristic: "จระเข้ที่ใหญ่ที่สุด อันตรายมาก ว่ายน้ำเก่ง"
+        }
+    },
+    {
+        name: "ปลาไน",
+        emoji: "🐟",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Actinopterygii (ปลาครีบแข็ง)",
+            order: "Cypriniformes (ปลาไน)",
+            family: "Cyprinidae (วงศ์ปลาไน)",
+            genus: "Cyprinus (ไซปรินัส)",
+            species: "Cyprinus carpio",
+            characteristic: "ปลาน้ำจืด เลี้ยงง่าย เติบโตเร็ว นิยมเลี้ยงเพื่อบริโภค"
+        }
+    },
+    {
+        name: "แรดดำ",
+        emoji: "🦏",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Perissodactyla (สัตว์กีบเดี่ยว)",
+            family: "Rhinocerotidae (วงศ์แรด)",
+            genus: "Diceros (ไดเซรอส)",
+            species: "Diceros bicornis",
+            characteristic: "แรดแอฟริกา มีเขาแหลม ใกล้สูญพันธุ์"
+        }
+    },
+    {
+        name: "นกอีมู",
+        emoji: "🦆",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Casuariiformes (นกคาซัวรี)",
+            family: "Dromaiidae (วงศ์อีมู)",
+            genus: "Dromaius (โดรไมอุส)",
+            species: "Dromaius novaehollandiae",
+            characteristic: "นกใหญ่บินไม่ได้ วิ่งเร็ว สูงเป็นอันดับสองของโลก"
+        }
+    },
+    {
+        name: "ม้า",
+        emoji: "🐴",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Perissodactyla (สัตว์กีบเดี่ยว)",
+            family: "Equidae (วงศ์ม้า)",
+            genus: "Equus (อีควัส)",
+            species: "Equus caballus",
+            characteristic: "สัตว์ขี่ วิ่งเร็ว แข็งแรง เป็นมิตรกับมนุษย์"
+        }
+    },
+    {
+        name: "แมว",
+        emoji: "🐱",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Felidae (วงศ์แมว)",
+            genus: "Felis (ฟีลิส)",
+            species: "Felis catus",
+            characteristic: "สัตว์เลี้ยงยอดนิยม คล่องแคล่ว มีเล็บแหลม"
+        }
+    },
+    {
+        name: "ฮิปโปโปเตมัส",
+        emoji: "🦛",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Hippopotamidae (วงศ์ฮิปโป)",
+            genus: "Hippopotamus (ฮิปโปโปเตมัส)",
+            species: "Hippopotamus amphibius",
+            characteristic: "สัตว์อันตรายในแอฟริกา อาศัยในน้ำ ปากใหญ่มาก"
+        }
+    },
+    {
+        name: "มนุษย์",
+        emoji: "👤",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Primates (ไพรเมต)",
+            family: "Hominidae (วงศ์คน)",
+            genus: "Homo (โฮโม)",
+            species: "Homo sapiens",
+            characteristic: "สัตว์ที่ฉลาดที่สุด มีภาษา สร้างสังคมซับซ้อน"
+        }
+    },
+    {
+        name: "ช้างพุ่มไม้แอฟริกา",
+        emoji: "🐘",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Proboscidea (สัตว์มีงวง)",
+            family: "Elephantidae (วงศ์ช้าง)",
+            genus: "Loxodonta (ลอกโซดอนตา)",
+            species: "Loxodonta africana",
+            characteristic: "สัตว์บกที่ใหญ่ที่สุด มีงวงยาว หูใหญ่"
+        }
+    },
+    {
+        name: "ลิงวอก",
+        emoji: "🐒",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Primates (ไพรเมต)",
+            family: "Cercopithecidae (วงศ์ลิงโลกเก่า)",
+            genus: "Macaca (มาคาคา)",
+            species: "Macaca mulatta",
+            characteristic: "ลิงฉลาด เลี้ยงง่าย ใช้ในการวิจัย"
+        }
+    },
+    {
+        name: "หนูหริ่งบ้าน",
+        emoji: "🐭",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Rodentia (สัตว์แทะ)",
+            family: "Muridae (วงศ์หนู)",
+            genus: "Mus (มุส)",
+            species: "Mus musculus",
+            characteristic: "หนูขนาดเล็ก แพร่พันธุ์เร็ว ใช้ในการวิจัย"
+        }
+    },
+    {
+        name: "งูเห่ามัคคุเทศก์",
+        emoji: "🐍",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Squamata (สัตว์มีเกล็ด)",
+            family: "Elapidae (วงศ์งูเห่า)",
+            genus: "Naja (นาจา)",
+            species: "Naja haje",
+            characteristic: "งูพิษอันตราย กางคอได้ สัญลักษณ์อียิปต์โบราณ"
+        }
+    },
+    {
+        name: "งูเห่าอินเดีย",
+        emoji: "🐍",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Squamata (สัตว์มีเกล็ด)",
+            family: "Elapidae (วงศ์งูเห่า)",
+            genus: "Naja (นาจา)",
+            species: "Naja naja",
+            characteristic: "งูพิษ กางคอได้ มีลายรูปแว่นตา"
+        }
+    },
+    {
+        name: "สิงโต",
+        emoji: "🦁",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Felidae (วงศ์แมว)",
+            genus: "Panthera (แพนเทรา)",
+            species: "Panthera leo",
+            characteristic: "ราชาแห่งป่า ตัวผู้มีขนฟู ล่าเป็นฝูง"
+        }
+    },
+    {
+        name: "เสือโคร่ง",
+        emoji: "🐅",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Felidae (วงศ์แมว)",
+            genus: "Panthera (แพนเทรา)",
+            species: "Panthera tigris",
+            characteristic: "แมวใหญ่ที่สุด มีลายขวาง ล่าเดี่ยว แข็งแรงมาก"
+        }
+    },
+    {
+        name: "อุรังอุตังบอร์เนียว",
+        emoji: "🦧",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Primates (ไพรเมต)",
+            family: "Hominidae (วงศ์คน)",
+            genus: "Pongo (ปงโก)",
+            species: "Pongo pygmaeus",
+            characteristic: "ลิงใหญ่ ขนสีแดง ชาญฉลาด ใช้เครื่องมือได้"
+        }
+    },
+    {
+        name: "เพนกวินอาเดลี",
+        emoji: "🐧",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Aves (นก)",
+            order: "Sphenisciformes (นกเพนกวิน)",
+            family: "Spheniscidae (วงศ์เพนกวิน)",
+            genus: "Pygoscelis (ไพโกเซลิส)",
+            species: "Pygoscelis adeliae",
+            characteristic: "เพนกวินแอนตาร์กติกา ขาวดำ ว่ายน้ำเก่ง"
+        }
+    },
+    {
+        name: "กวางเรนเดียร์",
+        emoji: "🦌",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Artiodactyla (สัตว์กีบคู่)",
+            family: "Cervidae (วงศ์กวาง)",
+            genus: "Rangifer (แรงกิเฟอร์)",
+            species: "Rangifer tarandus",
+            characteristic: "กวางขั้วโลกเหนือ ทั้งเพศมีเขา อพยพฝูงใหญ่"
+        }
+    },
+    {
+        name: "หนูบ้าน",
+        emoji: "🐀",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Rodentia (สัตว์แทะ)",
+            family: "Muridae (วงศ์หนู)",
+            genus: "Rattus (แรตตุส)",
+            species: "Rattus norvegicus",
+            characteristic: "หนูใหญ่ ฉลาด ปรับตัวได้ดี อาศัยใกล้มนุษย์"
+        }
+    },
+    {
+        name: "ปลาแซลมอนแอตแลนติก",
+        emoji: "🐟",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Actinopterygii (ปลาครีบแข็ง)",
+            order: "Salmoniformes (ปลาแซลมอน)",
+            family: "Salmonidae (วงศ์แซลมอน)",
+            genus: "Salmo (ซัลโม)",
+            species: "Salmo salar",
+            characteristic: "ปลาอพยพ วางไข่ในน้ำจืด เนื้อสีชมพู"
+        }
+    },
+    {
+        name: "ปลาฉลามหัวค้อนหยัก",
+        emoji: "🦈",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Chondrichthyes (ปลากระดูกอ่อน)",
+            order: "Carcharhiniformes (ฉลามกราวด์)",
+            family: "Sphyrnidae (วงศ์ฉลามหัวค้อน)",
+            genus: "Sphyrna (สไฟร์นา)",
+            species: "Sphyrna lewini",
+            characteristic: "หัวรูปค้อน เห็นรอบทิศทาง ว่ายเป็นฝูง"
+        }
+    },
+    {
+        name: "หนอนนก",
+        emoji: "🪱",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Arthropoda (สัตว์ขาปล้อง)",
+            class: "Insecta (แมลง)",
+            order: "Coleoptera (แมลงปีกแข็ง)",
+            family: "Tenebrionidae (วงศ์ด้วงนก)",
+            genus: "Tenebrio (เทเนบริโอ)",
+            species: "Tenebrio molitor",
+            characteristic: "ตัวหนอนสีเหลือง เลี้ยงง่าย เป็นอาหารสัตว์"
+        }
+    },
+    {
+        name: "หมีขาว",
+        emoji: "🐻‍❄️",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Ursidae (วงศ์หมี)",
+            genus: "Ursus (เออร์ซัส)",
+            species: "Ursus maritimus",
+            characteristic: "หมีขั้วโลกเหนือ ขนขาว ว่ายน้ำเก่ง ล่าแมวน้ำ"
+        }
+    },
+    {
+        name: "มังกรโกโมโด",
+        emoji: "🦎",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Reptilia (สัตว์เลื้อยคลาน)",
+            order: "Squamata (สัตว์มีเกล็ด)",
+            family: "Varanidae (วงศ์เหี้ย)",
+            genus: "Varanus (วารานัส)",
+            species: "Varanus komodoensis",
+            characteristic: "ตุ๊กแกใหญ่ที่สุด มีพิษ ล่าสัตว์ใหญ่ได้"
+        }
+    },
+    {
+        name: "หมาจิ้งจอกอาร์กติก",
+        emoji: "🦊",
+        taxonomy: {
+            domain: "Eukaryota (ยูคาริโอตา)",
+            phylum: "Chordata (มีสันหลัง)",
+            class: "Mammalia (เลี้ยงลูกด้วยนม)",
+            order: "Carnivora (กินเนื้อ)",
+            family: "Canidae (วงศ์สุนัข)",
+            genus: "Vulpes (วัลเปส)",
+            species: "Vulpes lagopus",
+            characteristic: "ขนเปลี่ยนสีตามฤดู หูเล็ก หางฟู ทนหนาวได้"
+        }
+    },
+            {
+                name: "เสือ",
+                emoji: "🐅",
+                taxonomy: {
+                    domain: "Eukaryota (ยูคาริโอตา)",
+                    phylum: "Chordata (มีสันหลัง)",
+                    class: "Mammalia (เลี้ยงลูกด้วยนม)",
+                    order: "Carnivora (กินเนื้อ)",
+                    family: "Felidae (วงศ์แมว)",
+                    genus: "Panthera (แพนเธอรา)",
+                    species: "Panthera tigris",
+                    characteristic: "แมวใหญ่ มีลายสีส้มดำ นักล่าเก่ง"
+                }
+            }
+        ];
+
+        const taxonomyLevels = [
+            { key: 'domain', name: 'โดเมน (Domain)' },
+            { key: 'phylum', name: 'ไฟลัม (Phylum)' },
+            { key: 'class', name: 'ชั้น (Class)' },
+            { key: 'order', name: 'อันดับ (Order)' },
+            { key: 'family', name: 'วงศ์ (Family)' },
+            { key: 'genus', name: 'สกุล (Genus)' },
+            { key: 'species', name: 'ชนิด (Species)' },
+            { key: 'characteristic', name: 'ลักษณะเด่น' }
+        ];
+
+        let currentLevel = '';
+        let currentQuestion = 0;
+        let score = 0;
+        let startTime = 0;
+        let timerInterval;
+        let questions = [];
+
+        function startQuiz(level) {
+            currentLevel = level;
+            currentQuestion = 0;
+            score = 0;
+            questions = [];
+            
+            // สุ่มสัตว์ 10 ตัว
+            const shuffledAnimals = [...animals].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < 10; i++) {
+                const animal = shuffledAnimals[i % shuffledAnimals.length];
+                const questionData = generateQuestion(animal, level);
+                questions.push(questionData);
+            }
+            
+            document.getElementById('levelSelection').style.display = 'none';
+            document.getElementById('quizContainer').style.display = 'block';
+            
+            startTime = Date.now();
+            startTimer();
+            showQuestion();
+        }
+
+        // ฟังก์ชันเดิม (ลักษณะเด่นอาจไม่แสดง)
+function generateQuestion(animal, level) {
+    let visibleCount;
+    switch(level) {
+        case 'easy': visibleCount = 5; break;
+        case 'medium': visibleCount = 4; break;
+        case 'hard': visibleCount = 3; break;
+    }
+    
+    // สุ่มตำแหน่งที่จะแสดง
+    const totalLevels = taxonomyLevels.length;
+    const hiddenCount = totalLevels - visibleCount;
+    const visibleIndices = [];
+    
+    while (visibleIndices.length < visibleCount) {
+        const randomIndex = Math.floor(Math.random() * totalLevels);
+        if (!visibleIndices.includes(randomIndex)) {
+            visibleIndices.push(randomIndex);
+        }
+    }
+    
+    return {
+        animal: animal,
+        visibleIndices: visibleIndices.sort((a, b) => a - b)
+    };
+}
+
+// ===== ฟังก์ชันใหม่ (บังคับให้ลักษณะเด่นแสดงเสมอ) =====
+function generateQuestion(animal, level) {
+    let visibleCount;
+    switch(level) {
+        case 'easy': visibleCount = 5; break;
+        case 'medium': visibleCount = 4; break;
+        case 'hard': visibleCount = 3; break;
+    }
+    
+    const characteristicIndex = 7; // ลักษณะเด่นอยู่ที่ index 7
+    
+    // เริ่มด้วยลักษณะเด่นเสมอ
+    const visibleIndices = [characteristicIndex];
+    
+    // สุ่มเลือกตำแหน่งอื่นๆ จาก index 0-6 ให้ครบ
+    while (visibleIndices.length < visibleCount) {
+        const randomIndex = Math.floor(Math.random() * 7); // สุ่มจาก 0-6 เท่านั้น
+        if (!visibleIndices.includes(randomIndex)) {
+            visibleIndices.push(randomIndex);
+        }
+    }
+    
+    return {
+        animal: animal,
+        visibleIndices: visibleIndices.sort((a, b) => a - b)
+    };
+}
+
+        function showQuestion() {
+            const questionData = questions[currentQuestion];
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            
+            // สร้างตาราง
+            const tbody = document.getElementById('taxonomyBody');
+            tbody.innerHTML = '';
+            
+            questionData.visibleIndices.forEach(index => {
+                const level = taxonomyLevels[index];
+                const row = tbody.insertRow();
+                const cellLevel = row.insertCell(0);
+                const cellData = row.insertCell(1);
+                
+                cellLevel.textContent = level.name;
+                cellData.textContent = questionData.animal.taxonomy[level.key];
+            });
+            
+            document.getElementById('answerInput').value = '';
+            document.getElementById('feedback').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+            
+            // Focus ที่ input
+            document.getElementById('answerInput').focus();
+        }
+
+        function submitAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim().toLowerCase();
+            const questionData = questions[currentQuestion];
+            const correctAnswer = questionData.animal.name.toLowerCase();
+            
+            const feedback = document.getElementById('feedback');
+            feedback.style.display = 'block';
+            
+            // ตรวจสอบคำตอบ (ยอมรับคำตอบที่คล้ายกัน)
+            const isCorrect = userAnswer === correctAnswer || 
+                             userAnswer.includes(correctAnswer) || 
+                             correctAnswer.includes(userAnswer);
+            
+            if (isCorrect) {
+                score++;
+                feedback.className = 'feedback correct';
+                feedback.innerHTML = `
+                    <span class="animal-emoji">${questionData.animal.emoji}</span>
+                    ✅ ถูกต้อง! คำตอบคือ: <strong>${questionData.animal.name}</strong>
+                `;
+            } else {
+                feedback.className = 'feedback incorrect';
+                feedback.innerHTML = `
+                    <span class="animal-emoji">${questionData.animal.emoji}</span>
+                    ❌ ผิด! คำตอบที่ถูกต้องคือ: <strong>${questionData.animal.name}</strong><br>
+                    คุณตอบ: <strong>${document.getElementById('answerInput').value}</strong>
+                `;
+            }
+            
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            clearInterval(timerInterval);
+            const endTime = Date.now();
+            const totalTime = Math.floor((endTime - startTime) / 1000);
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            
+            const percentage = Math.round((score / questions.length) * 100);
+            document.getElementById('finalScore').textContent = `${score}/${questions.length} (${percentage}%)`;
+            document.getElementById('finalTime').textContent = `⏱️ เวลาที่ใช้: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            let performance = '';
+            if (percentage >= 80) performance = '🏆 ยอดเยี่ยม! คุณเป็นนักชีววิทยา!';
+            else if (percentage >= 60) performance = '👍 ดี! ความรู้ดีมาก!';
+            else if (percentage >= 40) performance = '😊 พอใช้ ควรศึกษาเพิ่มเติม';
+            else performance = '😅 ต้องฝึกฝนเพิ่มเติมนะ';
+            
+            document.getElementById('performance').textContent = performance;
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const currentTime = Date.now();
+                const elapsed = Math.floor((currentTime - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    `⏱️ เวลา: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function playAgain() {
+            clearInterval(timerInterval);
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('levelSelection').style.display = 'block';
+        }
+
+        function showAnimalInfo() {
+            const modal = document.getElementById('animalInfoModal');
+            const grid = document.getElementById('animalsGrid');
+            
+            // สร้างการ์ดสำหรับแต่ละสัตว์
+            grid.innerHTML = '';
+            animals.forEach(animal => {
+                const card = document.createElement('div');
+                card.className = 'animal-card';
+                
+                card.innerHTML = `
+                    <div class="animal-header">
+                        <span>${animal.emoji}</span>
+                        ${animal.name}
+                    </div>
+                    <div class="animal-taxonomy">
+                        <div><span class="taxonomy-label">โดเมน:</span> ${animal.taxonomy.domain}</div>
+                        <div><span class="taxonomy-label">ไฟลัม:</span> ${animal.taxonomy.phylum}</div>
+                        <div><span class="taxonomy-label">ชั้น:</span> ${animal.taxonomy.class}</div>
+                        <div><span class="taxonomy-label">อันดับ:</span> ${animal.taxonomy.order}</div>
+                        <div><span class="taxonomy-label">วงศ์:</span> ${animal.taxonomy.family}</div>
+                        <div><span class="taxonomy-label">สกุล:</span> ${animal.taxonomy.genus}</div>
+                        <div><span class="taxonomy-label">ชนิด:</span> ${animal.taxonomy.species}</div>
+                        <div><span class="taxonomy-label">ลักษณะเด่น:</span> ${animal.taxonomy.characteristic}</div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+            
+            modal.style.display = 'block';
+        }
+
+        function closeAnimalInfo() {
+            document.getElementById('animalInfoModal').style.display = 'none';
+        }
+
+        // ปิด modal เมื่อคลิกพื้นหลัง
+        window.onclick = function(event) {
+            const modal = document.getElementById('animalInfoModal');
+            if (event.target === modal) {
+                closeAnimalInfo();
+            }
+        }
+
+        // Enter key support
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('answerInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    if (document.getElementById('nextBtn').style.display === 'none') {
+                        submitAnswer();
+                    } else {
+                        nextQuestion();
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
